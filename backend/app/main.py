@@ -6,7 +6,7 @@ import app.models
 from app.db.database import get_db
 from app.routers import auth
 from app.routers import projects
-
+from app.routers import sites
 
 app = FastAPI(
     title="Darukaa.Earth API",
@@ -19,7 +19,7 @@ app.include_router(
     projects.router,
     prefix="/api/projects",
 )
-
+app.include_router(sites.router)
 app.include_router(auth.router)
 
 

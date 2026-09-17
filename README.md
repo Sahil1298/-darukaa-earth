@@ -34,7 +34,9 @@ Phase 5B - FastAPI project routers: Completed
 
 Phase 6 - JWT authentication and authorization: Completed
 
-Next phase: Geographical site APIs
+Phase 7 - Geographical site APIs: Completed
+
+Next phase: Environmental metric APIs
 
 ## Project Structure
 
@@ -71,7 +73,8 @@ darukaa-earth/
 │   │   ├── routers/
 │   │   │   ├── __init__.py
 │   │   │   ├── auth.py
-│   │   │   └── projects.py
+│   │   │   ├── projects.py
+│   │   │   └── sites.py
 │   │   ├── __init__.py
 │   │   └── main.py
 │   ├── alembic.ini
@@ -286,15 +289,11 @@ The project router is located at:
 
     backend/app/routers/projects.py
 
-The router is registered in:
-
-    backend/app/main.py
-
 The project API uses the prefix:
 
     /api/projects
 
-Current endpoints:
+Current project endpoints:
 
     GET /api/projects/
     GET /api/projects/{project_id}
@@ -308,10 +307,6 @@ When a project does not exist, the API returns HTTP 404 with:
     {
       "detail": "Project not found"
     }
-
-The project list endpoint was tested successfully.
-
-The project detail endpoint was tested with a missing project ID and correctly returned HTTP 404.
 
 This follows the FastAPI router structure used in Corey Schafer's FastAPI course, where API routes are separated into routers and included from the main application.
 
@@ -457,7 +452,7 @@ The authenticated user's ID is taken from:
 
 The client does not provide user_id.
 
-The project is therefore associated with the authenticated user.
+The project is associated with the authenticated user.
 
 Project read endpoints are also protected:
 
@@ -478,9 +473,127 @@ but could not access the first user's project:
 
     GET /api/projects/1 → 404 Project not found
 
+## Phase 7 - Geographical Site APIs
+
+Site management was added using the existing PostGIS Site model and authenticated project ownership.
+
+The site router is located at:
+
+    backend/app/routers/sites.py
+
+The site API uses the prefix:
+
+    /api/projects/{project_id}/sites
+
+Current site endpoints:
+
+    POST /api/projects/{project_id}/sites/
+    GET /api/projects/{project_id}/sites/
+    GET /api/projects/{project_id}/sites/{site_id}
+    PUT /api/projects/{project_id}/sites/{site_id}
+    DELETE /api/projects/{project_id}/sites/{site_id}
+
+### Site Creation
+
+A site is created inside an authenticated user's project.
+
+The request accepts:
+
+    name
+    latitude
+    longitude
+    area_hectares
+
+The API converts latitude and longitude into a PostGIS point:
+
+    POINT(longitude latitude)
+
+The geometry uses:
+
+    SRID 4326
+
+The client does not provide project ownership information.
+
+The API verifies that the selected project belongs to the authenticated user before creating the site.
+
+### Site Retrieval
+
+The API converts the stored PostGIS point back into:
+
+    latitude
+    longitude
+
+PostGIS functions are used to read:
+
+    ST_Y(location) → latitude
+    ST_X(location) → longitude
+
+The site list endpoint returns only sites belonging to a project owned by the authenticated user.
+
+The single-site endpoint checks:
+
+    Site ID
+    Project ID
+    Project ownership
+
+before returning the site.
+
+### Site Update
+
+A site can be updated using:
+
+    PUT /api/projects/{project_id}/sites/{site_id}
+
+The update request accepts:
+
+    name
+    latitude
+    longitude
+    area_hectares
+
+The PostGIS location is replaced with the updated coordinates.
+
+The API verifies ownership before modifying the site.
+
+### Site Deletion
+
+A site can be deleted using:
+
+    DELETE /api/projects/{project_id}/sites/{site_id}
+
+Successful deletion returns:
+
+    204 No Content
+
+The API verifies ownership before deleting the site.
+
+### Site Authorization
+
+Site creation, retrieval, update and deletion are protected by JWT authentication.
+
+A user cannot access or modify sites belonging to another user's project.
+
+Authorization was tested using a second user.
+
+Unauthorized site access, update and deletion requests were rejected.
+
+### PostGIS Verification
+
+The Site location was verified directly in PostgreSQL.
+
+Example stored geometry:
+
+    POINT(72.906 19.1176)
+
+SRID:
+
+    4326
+
+This confirms that the API coordinates are stored as a PostGIS geometry rather than plain text or separate database coordinate fields.
+
 ## Database Architecture
 
-The planned database relationship is:
+The database relationship is:
 
     User → Projects → Sites → Metrics
 
@@ -531,7 +644,7 @@ Git commits represent meaningful development milestones.
 
 The README is updated as each major phase is completed.
 
-Authentication work is grouped into a meaningful feature commit instead of committing every small implementation step separately.
+Authentication and site-management work are grouped into meaningful feature commits instead of committing every small implementation step separately.
 
 ## Git Milestones
 
@@ -563,21 +676,25 @@ Phase 6:
 
     feat: add JWT authentication and authorization
 
+Phase 7:
+
+    feat: add geographical site APIs
+
 ## Planned Features
 
-Geographical site creation and management
+Environmental metric creation and management
 
-PostGIS location queries
+Metric APIs
 
 Carbon analytics
 
 Biodiversity analytics
 
+PostGIS location queries
+
 Interactive Mapbox visualization
 
 Highcharts analytics
-
-Metric APIs
 
 Automated API testing
 
