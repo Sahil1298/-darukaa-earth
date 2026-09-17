@@ -4,13 +4,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import Depends
 import app.models
 from app.db.database import get_db
+from app.routers import projects
 
 app = FastAPI(
     title="Darukaa.Earth API",
     description="Geospatial carbon and biodiversity analytics platform",
     version="1.0.0",
 )
-
+app.include_router(
+    projects.router,
+    prefix="/api/projects",
+    
+)
 
 @app.get("/")
 async def root():

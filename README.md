@@ -30,7 +30,9 @@ Phase 4 - Database models and Alembic migrations: Completed
 
 Phase 5A - Pydantic schemas: Completed
 
-Next phase: FastAPI routers and API endpoints
+Phase 5B - FastAPI project routers: Completed
+
+Next phase: JWT authentication
 
 ## Project Structure
 
@@ -62,6 +64,9 @@ darukaa-earth/
 │   │   │   ├── project.py
 │   │   │   ├── site.py
 │   │   │   └── user.py
+│   │   ├── routers/
+│   │   │   ├── __init__.py
+│   │   │   └── projects.py
 │   │   ├── __init__.py
 │   │   └── main.py
 │   ├── alembic.ini
@@ -258,6 +263,43 @@ The UserResponse schema does not expose the stored password hash.
 
 Schema validation was tested with valid data and invalid latitude input.
 
+## Phase 5B - FastAPI Project Routers
+
+FastAPI routing was separated from the main application file using APIRouter.
+
+The project router is located at:
+
+    backend/app/routers/projects.py
+
+The router is registered in:
+
+    backend/app/main.py
+
+The project API uses the prefix:
+
+    /api/projects
+
+Current endpoints:
+
+    GET /api/projects/
+    GET /api/projects/{project_id}
+
+The project list endpoint reads projects from PostgreSQL using SQLAlchemy.
+
+The project detail endpoint retrieves a project by ID.
+
+When a project does not exist, the API returns HTTP 404 with:
+
+    {
+      "detail": "Project not found"
+    }
+
+The project list endpoint was tested successfully and returned HTTP 200.
+
+The project detail endpoint was tested with a missing project ID and correctly returned HTTP 404.
+
+This follows the FastAPI router structure used in Corey Schafer's FastAPI course, where API routes are separated into routers and included from the main application.
+
 ## Database Architecture
 
 The planned database relationship is:
@@ -332,6 +374,10 @@ Phase 4:
 Phase 5A:
 
     feat: add Pydantic request and response schemas
+
+Phase 5B:
+
+    feat: add project API routers
 
 ## Planned Features
 
