@@ -1,21 +1,27 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi import Depends
+
 import app.models
 from app.db.database import get_db
+from app.routers import auth
 from app.routers import projects
+
 
 app = FastAPI(
     title="Darukaa.Earth API",
     description="Geospatial carbon and biodiversity analytics platform",
     version="1.0.0",
 )
+
+
 app.include_router(
     projects.router,
     prefix="/api/projects",
-    
 )
+
+app.include_router(auth.router)
+
 
 @app.get("/")
 async def root():
@@ -32,7 +38,9 @@ async def health():
 
 
 @app.get("/health/db")
-async def database_health(db: AsyncSession = Depends(get_db)):
+async def database_health(
+    db: AsyncSession = Depends(get_db),
+):
     result = await db.execute(text("SELECT 1"))
     value = result.scalar()
 

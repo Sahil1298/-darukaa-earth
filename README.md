@@ -32,7 +32,9 @@ Phase 5A - Pydantic schemas: Completed
 
 Phase 5B - FastAPI project routers: Completed
 
-Next phase: JWT authentication
+Phase 6 - JWT authentication and authorization: Completed
+
+Next phase: Geographical site APIs
 
 ## Project Structure
 
@@ -47,7 +49,9 @@ darukaa-earth/
 │   ├── app/
 │   │   ├── core/
 │   │   │   ├── __init__.py
-│   │   │   └── config.py
+│   │   │   ├── config.py
+│   │   │   ├── dependencies.py
+│   │   │   └── security.py
 │   │   ├── db/
 │   │   │   ├── __init__.py
 │   │   │   └── database.py
@@ -66,6 +70,7 @@ darukaa-earth/
 │   │   │   └── user.py
 │   │   ├── routers/
 │   │   │   ├── __init__.py
+│   │   │   ├── auth.py
 │   │   │   └── projects.py
 │   │   ├── __init__.py
 │   │   └── main.py
@@ -143,6 +148,16 @@ Example:
     POSTGRES_PASSWORD=change_me
     POSTGRES_PORT=5432
     DATABASE_URL=postgresql+psycopg://darukaa:change_me@localhost:5432/darukaa
+
+JWT configuration is also loaded from the root .env file.
+
+Example:
+
+    JWT_SECRET_KEY=change_me
+    JWT_ALGORITHM=HS256
+    ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+The real JWT secret must never be committed to Git.
 
 ## Phase 3 - SQLAlchemy Database Integration
 
@@ -294,11 +309,174 @@ When a project does not exist, the API returns HTTP 404 with:
       "detail": "Project not found"
     }
 
-The project list endpoint was tested successfully and returned HTTP 200.
+The project list endpoint was tested successfully.
 
 The project detail endpoint was tested with a missing project ID and correctly returned HTTP 404.
 
 This follows the FastAPI router structure used in Corey Schafer's FastAPI course, where API routes are separated into routers and included from the main application.
+
+## Phase 6 - JWT Authentication and Authorization
+
+JWT authentication was added using FastAPI's OAuth2 bearer-token pattern.
+
+The authentication system contains:
+
+    Password hashing with Argon2
+    Password verification
+    JWT creation
+    OAuth2 bearer-token extraction
+    Current-user dependency
+    User registration
+    User login
+    Current-user endpoint
+    Protected project endpoints
+    Project ownership checks
+
+### Password Hashing
+
+Passwords are hashed using:
+
+    pwdlib
+    Argon2
+
+Plain-text passwords are never stored in the database.
+
+The password hashing utility is located at:
+
+    backend/app/core/security.py
+
+### User Registration
+
+Registration endpoint:
+
+    POST /api/auth/register
+
+Registration validates the request using:
+
+    UserCreate
+
+A new user's password is hashed before the User record is stored.
+
+Duplicate email registration returns:
+
+    400 Bad Request
+
+Example:
+
+    {
+      "detail": "Email already registered"
+    }
+
+Successful registration returns:
+
+    201 Created
+
+The response uses:
+
+    UserResponse
+
+so the password and password hash are not returned.
+
+### JWT Login
+
+Login endpoint:
+
+    POST /api/auth/login
+
+The login follows the OAuth2 password form format.
+
+The username field contains the user's email.
+
+The login process:
+
+    Find user by email
+    Verify password
+    Create JWT
+    Return bearer token
+
+Successful login returns:
+
+    {
+      "access_token": "...",
+      "token_type": "bearer"
+    }
+
+Invalid credentials return:
+
+    401 Unauthorized
+
+with:
+
+    {
+      "detail": "Incorrect email or password"
+    }
+
+### Current User
+
+The OAuth2 bearer scheme is defined using:
+
+    OAuth2PasswordBearer
+
+The token URL is:
+
+    /api/auth/login
+
+The current-user dependency is located at:
+
+    backend/app/core/dependencies.py
+
+The dependency:
+
+    Reads the bearer token
+    Decodes the JWT
+    Reads the user ID from the "sub" claim
+    Finds the user in PostgreSQL
+    Returns the authenticated User object
+
+Current-user endpoint:
+
+    GET /api/auth/me
+
+A valid bearer token returns the authenticated user's safe profile.
+
+Requests without a valid bearer token return:
+
+    401 Unauthorized
+
+### Protected Project APIs
+
+Project creation is protected by JWT authentication.
+
+Endpoint:
+
+    POST /api/projects/
+
+The authenticated user's ID is taken from:
+
+    current_user.id
+
+The client does not provide user_id.
+
+The project is therefore associated with the authenticated user.
+
+Project read endpoints are also protected:
+
+    GET /api/projects/
+    GET /api/projects/{project_id}
+
+Project queries are filtered by the authenticated user's ID.
+
+This prevents one user from reading another user's projects.
+
+Ownership was tested using a second user.
+
+The second user could:
+
+    GET /api/projects/ → 200 with an empty list
+
+but could not access the first user's project:
+
+    GET /api/projects/1 → 404 Project not found
 
 ## Database Architecture
 
@@ -351,7 +529,9 @@ Each phase follows:
 
 Git commits represent meaningful development milestones.
 
-The README is updated as each phase is completed.
+The README is updated as each major phase is completed.
+
+Authentication work is grouped into a meaningful feature commit instead of committing every small implementation step separately.
 
 ## Git Milestones
 
@@ -379,15 +559,15 @@ Phase 5B:
 
     feat: add project API routers
 
+Phase 6:
+
+    feat: add JWT authentication and authorization
+
 ## Planned Features
 
-JWT-based administrator authentication
+Geographical site creation and management
 
-Project creation and management
-
-Geographical site management
-
-PostGIS-based location storage
+PostGIS location queries
 
 Carbon analytics
 
@@ -397,7 +577,7 @@ Interactive Mapbox visualization
 
 Highcharts analytics
 
-REST API routers
+Metric APIs
 
 Automated API testing
 
@@ -406,6 +586,8 @@ Ruff linting and formatting
 Husky and lint-staged
 
 GitHub Actions CI/CD
+
+Frontend development using React
 
 Frontend deployment using Vercel
 
