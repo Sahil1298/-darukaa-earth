@@ -28,7 +28,9 @@ Phase 3 - SQLAlchemy database integration: Completed
 
 Phase 4 - Database models and Alembic migrations: Completed
 
-Next phase: Pydantic schemas and API structure
+Phase 5A - Pydantic schemas: Completed
+
+Next phase: FastAPI routers and API endpoints
 
 ## Project Structure
 
@@ -49,10 +51,17 @@ darukaa-earth/
 │   │   │   └── database.py
 │   │   ├── models/
 │   │   │   ├── __init__.py
-│   │   │   ├── user.py
+│   │   │   ├── metric.py
 │   │   │   ├── project.py
 │   │   │   ├── site.py
-│   │   │   └── metric.py
+│   │   │   └── user.py
+│   │   ├── schemas/
+│   │   │   ├── __init__.py
+│   │   │   ├── auth.py
+│   │   │   ├── metric.py
+│   │   │   ├── project.py
+│   │   │   ├── site.py
+│   │   │   └── user.py
 │   │   ├── __init__.py
 │   │   └── main.py
 │   ├── alembic.ini
@@ -190,10 +199,6 @@ The Site location uses a GiST spatial index:
 
 Alembic was added as the database migration system.
 
-Alembic was initialized using:
-
-    uv run alembic init alembic
-
 The initial migration was generated using:
 
     uv run alembic revision --autogenerate -m "create initial database schema"
@@ -208,7 +213,7 @@ Current migration revision:
 
     6f10c26c3579
 
-The database now contains:
+The database contains:
 
     users
     projects
@@ -218,6 +223,40 @@ The database now contains:
 The Site table was verified with a PostGIS geometry column and GiST spatial index.
 
 Alembic is used to manage future database schema changes.
+
+## Phase 5A - Pydantic Schemas
+
+Pydantic schemas were added to separate API request and response validation from the SQLAlchemy database models.
+
+Current schemas:
+
+    UserCreate
+    UserResponse
+    Token
+    ProjectCreate
+    ProjectResponse
+    SiteCreate
+    SiteResponse
+    MetricCreate
+    MetricResponse
+
+Request schemas validate incoming API data before it reaches the database.
+
+The SiteCreate schema accepts:
+
+    latitude
+    longitude
+    area_hectares
+
+Latitude is validated between -90 and 90.
+
+Longitude is validated between -180 and 180.
+
+Area must be greater than zero.
+
+The UserResponse schema does not expose the stored password hash.
+
+Schema validation was tested with valid data and invalid latitude input.
 
 ## Database Architecture
 
@@ -290,6 +329,10 @@ Phase 4:
 
     feat: add database models and Alembic migration
 
+Phase 5A:
+
+    feat: add Pydantic request and response schemas
+
 ## Planned Features
 
 JWT-based administrator authentication
@@ -307,8 +350,6 @@ Biodiversity analytics
 Interactive Mapbox visualization
 
 Highcharts analytics
-
-Pydantic request and response schemas
 
 REST API routers
 
