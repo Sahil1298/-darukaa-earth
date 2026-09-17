@@ -4,7 +4,7 @@ Darukaa.Earth is a full-stack geospatial analytics platform for managing environ
 
 ## Project Goal
 
-The application allows an administrator to create projects, add geographical sites to those projects, view the sites on an interactive map, and view carbon and biodiversity analytics for each site.
+The application allows an administrator to create projects, add multiple geographical sites to projects, view sites on an interactive map, and view carbon and biodiversity analytics for each site.
 
 ## Technology Stack
 
@@ -24,43 +24,39 @@ Phase 1 - FastAPI backend foundation: Completed
 
 Phase 2 - PostgreSQL and PostGIS database foundation: Completed
 
-Next phase: SQLAlchemy database integration and application models
+Phase 3 - SQLAlchemy database integration: Completed
+
+Next phase: Database models and Alembic migrations
 
 ## Project Structure
 
 darukaa-earth/
 ├── backend/
 │   ├── app/
+│   │   ├── core/
+│   │   │   ├── __init__.py
+│   │   │   └── config.py
+│   │   ├── db/
+│   │   │   ├── __init__.py
+│   │   │   └── database.py
+│   │   ├── __init__.py
 │   │   └── main.py
+│   ├── .python-version
 │   ├── pyproject.toml
-│   ├── uv.lock
-│   └── .python-version
+│   └── uv.lock
 ├── frontend/
 ├── docker-compose.yml
 ├── .env.example
 ├── .gitignore
 └── README.md
 
-## Backend Setup
-
-The backend uses Python 3.13 and uv for dependency and virtual environment management.
-
-From the backend directory:
-
-    cd backend
-    uv run fastapi dev app/main.py
-
-The FastAPI application runs at:
-
-    http://127.0.0.1:8000
-
-Interactive API documentation is available at:
-
-    http://127.0.0.1:8000/docs
-
 ## Phase 1 - FastAPI Foundation
 
-The initial FastAPI application was created in backend/app/main.py.
+The initial backend was created using Python 3.13, uv and FastAPI.
+
+The FastAPI application is located at:
+
+    backend/app/main.py
 
 The application currently provides:
 
@@ -74,29 +70,57 @@ The application also provides:
 
 which is used as a simple health-check endpoint.
 
-FastAPI Swagger documentation was verified through the /docs endpoint.
+FastAPI's interactive Swagger documentation was verified through:
 
-## Database
+    http://127.0.0.1:8000/docs
 
-Darukaa.Earth uses PostgreSQL with PostGIS because the application needs to store and work with geographical site locations.
+## Phase 2 - PostgreSQL and PostGIS Database Foundation
 
-The local database runs in Docker using Docker Compose.
+PostgreSQL was added as the project database and PostGIS was used to support geographical data.
 
-The local database stack uses:
+The local database runs through Docker Compose using the PostGIS image:
 
-PostgreSQL 17
+    postgis/postgis:17-3.5
 
-PostGIS 3.5
+The local database uses:
 
-Docker Compose
+    PostgreSQL 17
+    PostGIS 3.5
+    Docker Compose
+
+The database container is named:
+
+    darukaa-db
+
+The PostgreSQL service is exposed locally on:
+
+    localhost:5432
+
+The database was started using:
+
+    docker compose up -d
+
+The container was verified using:
+
+    docker compose ps
+
+PostgreSQL access was tested using:
+
+    docker exec -it darukaa-db psql -U darukaa -d darukaa
+
+PostGIS was verified using:
+
+    SELECT PostGIS_Version();
+
+The local environment successfully reported PostGIS 3.5.
 
 ## Database Configuration
 
 Database configuration is stored in the local .env file.
 
-The .env file contains local development values and is ignored by Git.
+The .env file contains local development credentials and is ignored by Git.
 
-The .env.example file provides the variable names required to configure the database without storing real local secrets in the repository.
+The .env.example file provides the required environment variable names without storing the actual local credentials.
 
 Example variables:
 
@@ -104,42 +128,53 @@ Example variables:
     POSTGRES_USER=darukaa
     POSTGRES_PASSWORD=change_me
     POSTGRES_PORT=5432
+    DATABASE_URL=postgresql+psycopg://darukaa:change_me@localhost:5432/darukaa
 
-## Starting the Database
+## Phase 3 - SQLAlchemy Database Integration
 
-From the project root:
+SQLAlchemy was integrated with the FastAPI backend to communicate asynchronously with PostgreSQL.
 
-    docker compose up -d
+Pydantic Settings is used to load configuration from the root .env file.
 
-Check the database container:
+The database layer currently contains:
 
-    docker compose ps
+    Async SQLAlchemy engine
+    Async session factory
+    Declarative model base
+    FastAPI database dependency
 
-The PostgreSQL database is exposed locally on port 5432.
+The database connection uses the PostgreSQL psycopg driver through:
 
-The container name is:
+    postgresql+psycopg://
 
-    darukaa-db
+The database session dependency is provided through:
 
-## PostgreSQL and PostGIS Verification
+    get_db()
 
-The database can be accessed from inside the container using:
+A database health-check endpoint was added:
 
-    docker exec -it darukaa-db psql -U darukaa -d darukaa
+    GET /health/db
 
-PostgreSQL was verified successfully.
+The endpoint executes:
 
-PostGIS was verified using:
+    SELECT 1
 
-    SELECT PostGIS_Version();
+A successful response is:
 
-The current local environment successfully reports PostGIS 3.5.
+    {
+      "database": "connected",
+      "result": 1
+    }
+
+The endpoint returned HTTP 200, confirming that FastAPI, SQLAlchemy, psycopg and the PostgreSQL database are connected successfully.
 
 ## Database Architecture
 
-The planned database structure is:
+The planned database relationship is:
 
-User → Projects → Sites → Metrics
+    User → Projects → Sites → Metrics
+
+A user can manage multiple projects.
 
 A project can contain multiple geographical sites.
 
@@ -151,14 +186,33 @@ Each site can contain multiple analytical records for carbon and biodiversity me
 
 backend/app/
 
-core/
-db/
-models/
-schemas/
-routers/
-services/
+    core/
+    db/
+    models/
+    schemas/
+    routers/
+    services/
 
-The application will be gradually separated into these components as development continues.
+The backend will be gradually separated into these components as the project grows.
+
+## Local Development
+
+Start the database from the project root:
+
+    docker compose up -d
+
+Start the FastAPI backend:
+
+    cd backend
+    uv run fastapi dev
+
+The API runs at:
+
+    http://127.0.0.1:8000
+
+Interactive API documentation:
+
+    http://127.0.0.1:8000/docs
 
 ## Development Process
 
@@ -166,36 +220,29 @@ The project is being developed in phases.
 
 Each phase follows:
 
-Build → Test → Document → Commit
+    Build → Test → Document → Commit
 
 Git commits represent meaningful development milestones.
 
+The README is updated as each phase is completed.
+
 ## Git Milestones
 
-Phase 1 commit:
+Phase 1:
 
     feat: initialize FastAPI backend
 
-Phase 2 database commit:
+Phase 2:
 
     feat: add PostgreSQL PostGIS development database
 
-## Local Development
+Phase 3:
 
-Start the database:
-
-    docker compose up -d
-
-Start the FastAPI backend:
-
-    cd backend
-    uv run fastapi dev app/main.py
-
-The frontend will be added in a later phase.
+    feat: integrate SQLAlchemy database connection
 
 ## Planned Features
 
-Administrator authentication using JWT
+JWT-based administrator authentication
 
 Project creation and management
 
@@ -211,12 +258,42 @@ Interactive Mapbox visualization
 
 Highcharts analytics
 
-Automated testing
+Automated API testing
 
-Linting and formatting
+Ruff linting and formatting
+
+Pre-commit code quality checks using Husky and lint-staged
 
 GitHub Actions CI/CD
 
-Frontend deployment
+Frontend deployment using Vercel
 
-Backend deployment
+Backend deployment using Render
+
+## Future Documentation
+
+The README will be expanded as the following phases are implemented:
+
+Database models and schema
+
+Alembic migrations
+
+Authentication and JWT
+
+Project and site APIs
+
+Analytics APIs
+
+React frontend
+
+Mapbox integration
+
+Highcharts integration
+
+Testing
+
+CI/CD
+
+Deployment
+
+Live demo
