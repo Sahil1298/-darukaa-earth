@@ -4,7 +4,7 @@ Darukaa.Earth is a full-stack geospatial analytics platform for managing environ
 
 ## Project Goal
 
-The application allows an administrator to create projects, add multiple geographical sites to projects, view sites on an interactive map, and view carbon and biodiversity analytics for each site.
+The application allows an administrator to create projects, add geographical sites to projects, view sites on an interactive map, and view carbon and biodiversity analytics for each site.
 
 ## Technology Stack
 
@@ -26,12 +26,20 @@ Phase 2 - PostgreSQL and PostGIS database foundation: Completed
 
 Phase 3 - SQLAlchemy database integration: Completed
 
-Next phase: Database models and Alembic migrations
+Phase 4 - Database models and Alembic migrations: Completed
+
+Next phase: Pydantic schemas and API structure
 
 ## Project Structure
 
 darukaa-earth/
 ├── backend/
+│   ├── alembic/
+│   │   ├── versions/
+│   │   │   └── 6f10c26c3579_create_initial_database_schema.py
+│   │   ├── env.py
+│   │   ├── README
+│   │   └── script.py.mako
 │   ├── app/
 │   │   ├── core/
 │   │   │   ├── __init__.py
@@ -39,8 +47,15 @@ darukaa-earth/
 │   │   ├── db/
 │   │   │   ├── __init__.py
 │   │   │   └── database.py
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── user.py
+│   │   │   ├── project.py
+│   │   │   ├── site.py
+│   │   │   └── metric.py
 │   │   ├── __init__.py
 │   │   └── main.py
+│   ├── alembic.ini
 │   ├── .python-version
 │   ├── pyproject.toml
 │   └── uv.lock
@@ -52,77 +67,62 @@ darukaa-earth/
 
 ## Phase 1 - FastAPI Foundation
 
-The initial backend was created using Python 3.13, uv and FastAPI.
+The backend was created using Python 3.13, uv and FastAPI.
 
-The FastAPI application is located at:
+The main application is:
 
     backend/app/main.py
 
-The application currently provides:
+Current endpoints:
 
     GET /
-
-which returns a basic API running message.
-
-The application also provides:
-
     GET /health
 
-which is used as a simple health-check endpoint.
-
-FastAPI's interactive Swagger documentation was verified through:
+FastAPI's interactive API documentation is available at:
 
     http://127.0.0.1:8000/docs
 
 ## Phase 2 - PostgreSQL and PostGIS Database Foundation
 
-PostgreSQL was added as the project database and PostGIS was used to support geographical data.
+PostgreSQL was added as the application database and PostGIS was enabled for geospatial data.
 
-The local database runs through Docker Compose using the PostGIS image:
+The local database runs through Docker Compose using:
 
     postgis/postgis:17-3.5
 
-The local database uses:
+The local stack uses:
 
     PostgreSQL 17
     PostGIS 3.5
     Docker Compose
 
-The database container is named:
+Database container:
 
     darukaa-db
 
-The PostgreSQL service is exposed locally on:
+PostgreSQL is exposed locally on:
 
     localhost:5432
 
-The database was started using:
+The database can be started with:
 
     docker compose up -d
-
-The container was verified using:
-
-    docker compose ps
-
-PostgreSQL access was tested using:
-
-    docker exec -it darukaa-db psql -U darukaa -d darukaa
 
 PostGIS was verified using:
 
     SELECT PostGIS_Version();
 
-The local environment successfully reported PostGIS 3.5.
+The local environment reports PostGIS 3.5.
 
 ## Database Configuration
 
-Database configuration is stored in the local .env file.
+Database settings are loaded from the root .env file.
 
 The .env file contains local development credentials and is ignored by Git.
 
-The .env.example file provides the required environment variable names without storing the actual local credentials.
+The .env.example file provides the required environment variable names.
 
-Example variables:
+Example:
 
     POSTGRES_DB=darukaa
     POSTGRES_USER=darukaa
@@ -132,26 +132,22 @@ Example variables:
 
 ## Phase 3 - SQLAlchemy Database Integration
 
-SQLAlchemy was integrated with the FastAPI backend to communicate asynchronously with PostgreSQL.
+SQLAlchemy was integrated with FastAPI using asynchronous database sessions.
 
-Pydantic Settings is used to load configuration from the root .env file.
-
-The database layer currently contains:
+The database layer contains:
 
     Async SQLAlchemy engine
     Async session factory
     Declarative model base
     FastAPI database dependency
 
-The database connection uses the PostgreSQL psycopg driver through:
+Configuration is loaded using Pydantic Settings.
+
+The database connection uses:
 
     postgresql+psycopg://
 
-The database session dependency is provided through:
-
-    get_db()
-
-A database health-check endpoint was added:
+A database health endpoint was added:
 
     GET /health/db
 
@@ -159,14 +155,69 @@ The endpoint executes:
 
     SELECT 1
 
-A successful response is:
+Successful response:
 
     {
       "database": "connected",
       "result": 1
     }
 
-The endpoint returned HTTP 200, confirming that FastAPI, SQLAlchemy, psycopg and the PostgreSQL database are connected successfully.
+The endpoint returned HTTP 200, confirming that FastAPI, SQLAlchemy, psycopg and PostgreSQL are connected.
+
+## Phase 4 - Database Models and Alembic Migrations
+
+The application database schema is represented using SQLAlchemy models.
+
+Current models:
+
+    User
+    Project
+    Site
+    Metric
+
+The relationships are:
+
+    User → Projects → Sites → Metrics
+
+The Site model contains a PostGIS geometry column:
+
+    POINT
+    SRID 4326
+
+The Site location uses a GiST spatial index:
+
+    idx_sites_location
+
+Alembic was added as the database migration system.
+
+Alembic was initialized using:
+
+    uv run alembic init alembic
+
+The initial migration was generated using:
+
+    uv run alembic revision --autogenerate -m "create initial database schema"
+
+The generated migration was reviewed before being applied.
+
+The migration was applied using:
+
+    uv run alembic upgrade head
+
+Current migration revision:
+
+    6f10c26c3579
+
+The database now contains:
+
+    users
+    projects
+    sites
+    metrics
+
+The Site table was verified with a PostGIS geometry column and GiST spatial index.
+
+Alembic is used to manage future database schema changes.
 
 ## Database Architecture
 
@@ -174,26 +225,13 @@ The planned database relationship is:
 
     User → Projects → Sites → Metrics
 
-A user can manage multiple projects.
+One user can manage multiple projects.
 
-A project can contain multiple geographical sites.
+One project can contain multiple geographical sites.
 
-Each site will store its geographical location using PostGIS.
+Each site stores its geographical location using PostGIS.
 
 Each site can contain multiple analytical records for carbon and biodiversity measurements.
-
-## Planned Backend Structure
-
-backend/app/
-
-    core/
-    db/
-    models/
-    schemas/
-    routers/
-    services/
-
-The backend will be gradually separated into these components as the project grows.
 
 ## Local Development
 
@@ -201,22 +239,30 @@ Start the database from the project root:
 
     docker compose up -d
 
-Start the FastAPI backend:
+Start the backend:
 
     cd backend
     uv run fastapi dev
 
-The API runs at:
+API:
 
     http://127.0.0.1:8000
 
-Interactive API documentation:
+Swagger:
 
     http://127.0.0.1:8000/docs
 
+Check migration status:
+
+    uv run alembic current
+
+Check for pending model changes:
+
+    uv run alembic check
+
 ## Development Process
 
-The project is being developed in phases.
+The project is developed in phases.
 
 Each phase follows:
 
@@ -240,6 +286,10 @@ Phase 3:
 
     feat: integrate SQLAlchemy database connection
 
+Phase 4:
+
+    feat: add database models and Alembic migration
+
 ## Planned Features
 
 JWT-based administrator authentication
@@ -258,42 +308,18 @@ Interactive Mapbox visualization
 
 Highcharts analytics
 
+Pydantic request and response schemas
+
+REST API routers
+
 Automated API testing
 
 Ruff linting and formatting
 
-Pre-commit code quality checks using Husky and lint-staged
+Husky and lint-staged
 
 GitHub Actions CI/CD
 
 Frontend deployment using Vercel
 
 Backend deployment using Render
-
-## Future Documentation
-
-The README will be expanded as the following phases are implemented:
-
-Database models and schema
-
-Alembic migrations
-
-Authentication and JWT
-
-Project and site APIs
-
-Analytics APIs
-
-React frontend
-
-Mapbox integration
-
-Highcharts integration
-
-Testing
-
-CI/CD
-
-Deployment
-
-Live demo
