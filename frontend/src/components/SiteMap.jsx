@@ -1,43 +1,58 @@
 import { useEffect, useRef } from "react";
 
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import * as mapboxgl from "mapbox-gl/esm";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 function SiteMap({ sites }) {
   const mapContainerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
 
+  const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) {
       return;
     }
 
-    const map = L.map(mapContainerRef.current).setView(
-      [20.5937, 78.9629],
-      5
-    );
+    if (!mapboxToken) {
+      console.error(
+        "Mapbox token is missing. Set VITE_MAPBOX_TOKEN in frontend/.env."
+      );
+      return;
+    }
 
-    L.tileLayer(
-      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-      {
-        attribution:
-          '&copy; OpenStreetMap contributors',
-        maxZoom: 19,
-      }
-    ).addTo(map);
+    const map = new mapboxgl.Map({
+      accessToken: mapboxToken,
+      container: mapContainerRef.current,
+      style: "mapbox://styles/mapbox/standard",
+      center: [78.9629, 20.5937],
+      zoom: 4,
+    });
 
     mapRef.current = map;
 
-    setTimeout(() => {
-      map.invalidateSize();
+    map.once("load", () => {
+      map.resize();
+    });
+
+    const resizeTimer = setTimeout(() => {
+      map.resize();
     }, 100);
 
     return () => {
+      clearTimeout(resizeTimer);
+
+      markersRef.current.forEach((marker) => {
+        marker.remove();
+      });
+
+      markersRef.current = [];
+
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [mapboxToken]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -53,82 +68,92 @@ function SiteMap({ sites }) {
     markersRef.current = [];
 
     if (!sites || sites.length === 0) {
-      map.setView([20.5937, 78.9629], 5);
+      map.flyTo({
+        center: [78.9629, 20.5937],
+        zoom: 4,
+        duration: 500,
+      });
+
       return;
     }
 
-    const bounds = [];
+    const validSites = sites
+      .map((site) => {
+        const latitude = Number(site.latitude);
+        const longitude = Number(site.longitude);
 
-    sites.forEach((site) => {
-      const latitude = Number(site.latitude);
-      const longitude = Number(site.longitude);
+        return {
+          ...site,
+          latitude,
+          longitude,
+        };
+      })
+      .filter(
+        (site) =>
+          Number.isFinite(site.latitude) &&
+          Number.isFinite(site.longitude)
+      );
 
-      if (
-        !Number.isFinite(latitude) ||
-        !Number.isFinite(longitude)
-      ) {
-        return;
-      }
+    if (validSites.length === 0) {
+      return;
+    }
 
-      const markerIcon = L.divIcon({
-        className: "site-marker",
-        html: "<div></div>",
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-      });
+    const bounds = new mapboxgl.LngLatBounds();
 
-      const marker = L.marker(
-        [latitude, longitude],
-        {
-          icon: markerIcon,
-        }
-      ).addTo(map);
+    validSites.forEach((site) => {
+      const popupContent = document.createElement("div");
 
-      const popupContent =
-        document.createElement("div");
-
-      const title =
-        document.createElement("strong");
-
+      const title = document.createElement("strong");
       title.textContent = site.name;
 
-      const area =
-        document.createElement("p");
+      const area = document.createElement("p");
+      area.textContent = `Area: ${site.area_hectares} hectares`;
 
-      area.textContent =
-        `Area: ${site.area_hectares} hectares`;
-
-      const coordinates =
-        document.createElement("p");
-
-      coordinates.textContent =
-        `Coordinates: ${latitude}, ${longitude}`;
+      const coordinates = document.createElement("p");
+      coordinates.textContent = `Coordinates: ${site.latitude}, ${site.longitude}`;
 
       popupContent.appendChild(title);
       popupContent.appendChild(area);
       popupContent.appendChild(coordinates);
 
-      marker.bindPopup(popupContent);
+      const popup = new mapboxgl.Popup({
+        offset: 25,
+      }).setDOMContent(popupContent);
+
+      const marker = new mapboxgl.Marker()
+        .setLngLat([site.longitude, site.latitude])
+        .setPopup(popup)
+        .addTo(map);
 
       markersRef.current.push(marker);
 
-      bounds.push([latitude, longitude]);
+      bounds.extend([site.longitude, site.latitude]);
     });
 
-    if (bounds.length === 1) {
-      map.setView(bounds[0], 12);
-    } else if (bounds.length > 1) {
+    if (validSites.length === 1) {
+      map.flyTo({
+        center: [
+          validSites[0].longitude,
+          validSites[0].latitude,
+        ],
+        zoom: 12,
+        duration: 700,
+      });
+    } else {
       map.fitBounds(bounds, {
-        padding: [40, 40],
+        padding: 60,
         maxZoom: 12,
+        duration: 700,
       });
     }
 
-    setTimeout(() => {
-      map.invalidateSize();
+    const resizeTimer = setTimeout(() => {
+      map.resize();
     }, 100);
 
     return () => {
+      clearTimeout(resizeTimer);
+
       markersRef.current.forEach((marker) => {
         marker.remove();
       });

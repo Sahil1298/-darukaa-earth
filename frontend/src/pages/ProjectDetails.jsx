@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
 
 import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+
+import {
   createMetric,
   createSite,
   deleteMetric,
@@ -10,6 +22,16 @@ import {
   updateMetric,
 } from "../services/api";
 import SiteMap from "../components/SiteMap";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 function formatDateTimeLocal(value) {
   if (!value) {
@@ -230,18 +252,23 @@ function ProjectDetails({
     setRecordedAt(
       formatDateTimeLocal(metric.recorded_at)
     );
+
     setCarbonSequestered(
       String(metric.carbon_sequestered)
     );
+
     setCarbonAvoided(
       String(metric.carbon_avoided)
     );
+
     setBiodiversityScore(
       String(metric.biodiversity_score)
     );
+
     setHabitatArea(
       String(metric.habitat_area)
     );
+
     setMetricError("");
     setEditingMetric(metric);
     setShowCreateMetric(true);
@@ -360,14 +387,52 @@ function ProjectDetails({
       ? metrics[metrics.length - 1]
       : null;
 
-  const maxCarbon =
-    metrics.length > 0
-      ? Math.max(
-          ...metrics.map((metric) =>
-            Number(metric.carbon_sequestered)
-          )
-        )
-      : 0;
+  const carbonChartData = {
+    labels: metrics.map((metric) =>
+      new Date(
+        metric.recorded_at
+      ).toLocaleDateString()
+    ),
+    datasets: [
+      {
+        label: "Carbon Sequestered",
+        data: metrics.map((metric) =>
+          Number(metric.carbon_sequestered)
+        ),
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 4,
+      },
+    ],
+  };
+
+  const carbonChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+      },
+      title: {
+        display: false,
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: "Carbon Sequestered",
+        },
+      },
+      x: {
+        title: {
+          display: true,
+          text: "Recorded Date",
+        },
+      },
+    },
+  };
 
   return (
     <main className="dashboard">
@@ -965,43 +1030,17 @@ function ProjectDetails({
                     </div>
                   </div>
 
-                  <div className="metric-chart">
-                    {metrics.map((metric) => {
-                      const value = Number(
-                        metric.carbon_sequestered
-                      );
-
-                      const width =
-                        maxCarbon > 0
-                          ? (value / maxCarbon) * 100
-                          : 0;
-
-                      return (
-                        <div
-                          className="metric-bar-row"
-                          key={metric.id}
-                        >
-                          <span>
-                            {new Date(
-                              metric.recorded_at
-                            ).toLocaleDateString()}
-                          </span>
-
-                          <div className="metric-bar-track">
-                            <div
-                              className="metric-bar"
-                              style={{
-                                width: `${width}%`,
-                              }}
-                            />
-                          </div>
-
-                          <strong>
-                            {metric.carbon_sequestered}
-                          </strong>
-                        </div>
-                      );
-                    })}
+                  <div
+                    className="metric-chart"
+                    style={{
+                      position: "relative",
+                      height: "320px",
+                    }}
+                  >
+                    <Line
+                      data={carbonChartData}
+                      options={carbonChartOptions}
+                    />
                   </div>
                 </div>
               </>
