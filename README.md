@@ -14,6 +14,8 @@ Backend: Python, FastAPI, SQLAlchemy, Pydantic, JWT
 
 Database: PostgreSQL, PostGIS, GeoAlchemy2
 
+Testing: pytest, FastAPI TestClient
+
 Development and CI/CD: Git, GitHub, GitHub Actions, Husky, lint-staged
 
 Deployment: Vercel for frontend and Render for backend
@@ -38,7 +40,9 @@ Phase 7 - Geographical site APIs: Completed
 
 Phase 8 - Environmental metric APIs: Completed
 
-Next phase: Automated API testing
+Phase 9 - Automated API testing: Completed
+
+Next phase: React frontend foundation
 
 ## Project Structure
 
@@ -80,6 +84,13 @@ darukaa-earth/
 │   │   │   └── sites.py
 │   │   ├── __init__.py
 │   │   └── main.py
+│   ├── tests/
+│   │   ├── __init__.py
+│   │   ├── conftest.py
+│   │   ├── test_auth.py
+│   │   ├── test_authorization.py
+│   │   ├── test_main.py
+│   │   └── test_resources.py
 │   ├── alembic.ini
 │   ├── .python-version
 │   ├── pyproject.toml
@@ -718,6 +729,62 @@ This confirms that the metric API is connected through:
     SQLAlchemy
     PostgreSQL
 
+## Phase 9 - Automated API Testing
+
+Automated API tests were added using:
+
+    pytest
+    FastAPI TestClient
+
+A separate PostgreSQL database is used for testing:
+
+    darukaa_test
+
+The test database contains the same application schema as the development database.
+
+PostGIS was enabled in the test database.
+
+The test environment uses a Windows SelectorEventLoop so asynchronous psycopg connections work correctly during pytest.
+
+The test configuration is located at:
+
+    backend/tests/conftest.py
+
+The test configuration:
+
+    Points tests to darukaa_test
+    Overrides the FastAPI database dependency
+    Provides a reusable TestClient fixture
+    Cleans database data between tests
+
+Current test files:
+
+    test_main.py
+    test_auth.py
+    test_resources.py
+    test_authorization.py
+
+Current automated coverage includes:
+
+    Basic API health
+    Database health
+    User registration
+    Duplicate registration
+    User login
+    Wrong-password rejection
+    JWT authentication
+    Current-user endpoint
+    Project CRUD flow
+    Site CRUD flow
+    Metric CRUD flow
+    Ownership protection
+
+The complete test suite was validated successfully.
+
+Current test result:
+
+    4 passed
+
 ## Database Architecture
 
 The database relationship is:
@@ -730,7 +797,7 @@ One project can contain multiple geographical sites.
 
 Each site stores its geographical location using PostGIS.
 
-Each site can contain multiple analytical records for carbon and biodiversity measurements.
+Each site can contain multiple environmental metric records.
 
 ## Local Development
 
@@ -750,6 +817,11 @@ API:
 Swagger:
 
     http://127.0.0.1:8000/docs
+
+Run tests:
+
+    cd backend
+    uv run pytest
 
 Check migration status:
 
@@ -811,27 +883,39 @@ Phase 8:
 
     feat: add environmental metric APIs
 
+Phase 9:
+
+    feat: add automated API testing
+
 ## Planned Features
 
-Automated API testing
+React frontend
+
+Authentication UI
+
+Project dashboard
+
+Project management interface
+
+Site management interface
+
+Mapbox site visualization
+
+Environmental metric dashboard
+
+Highcharts analytics
+
+Carbon analytics
+
+Biodiversity analytics
+
+PostGIS location queries
 
 Ruff linting and formatting
 
 Husky and lint-staged
 
 GitHub Actions CI/CD
-
-PostGIS location queries
-
-Carbon analytics
-
-Biodiversity analytics
-
-Interactive Mapbox visualization
-
-Highcharts analytics
-
-Frontend development using React
 
 Frontend deployment using Vercel
 
