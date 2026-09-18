@@ -94,6 +94,8 @@ function App() {
   }
 
   if (user) {
+    const isAdministrator = user.role === "administrator";
+
     return (
       <div className="app">
         <header className="navbar">
@@ -102,7 +104,12 @@ function App() {
             <p>Environmental Analytics Platform</p>
           </div>
 
-          <span>{user.name}</span>
+          <div className="user-info">
+            <span>{user.name}</span>
+            <span className="role-badge">
+              {isAdministrator ? "Administrator" : "User"}
+            </span>
+          </div>
         </header>
 
         <Dashboard

@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
@@ -19,3 +21,4 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: EmailStr
+    role: Literal["user", "administrator"]

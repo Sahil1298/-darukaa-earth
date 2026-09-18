@@ -21,6 +21,8 @@ function Dashboard({ user, onLogout }) {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
+  const isAdministrator = user.role === "administrator";
+
   useEffect(() => {
     const token = localStorage.getItem("access_token");
 
@@ -109,13 +111,18 @@ function Dashboard({ user, onLogout }) {
     <main className="dashboard">
       <header className="dashboard-header">
         <div>
-          <p className="eyebrow">DASHBOARD</p>
+          <p className="eyebrow">
+            {isAdministrator
+              ? "ADMINISTRATOR DASHBOARD"
+              : "DASHBOARD"}
+          </p>
 
           <h2>Welcome, {user.name}.</h2>
 
           <p className="description">
-            Manage your environmental projects, geographical
-            sites, and environmental metrics.
+            {isAdministrator
+              ? "Manage environmental projects, geographical sites, and environmental metrics across the platform."
+              : "Manage your environmental projects, geographical sites, and environmental metrics."}
           </p>
         </div>
 
@@ -129,7 +136,11 @@ function Dashboard({ user, onLogout }) {
 
       <section className="dashboard-stats">
         <div className="stat-card">
-          <span>Projects</span>
+          <span>
+            {isAdministrator
+              ? "Total Projects"
+              : "Projects"}
+          </span>
           <strong>{projects.length}</strong>
         </div>
 
@@ -149,8 +160,17 @@ function Dashboard({ user, onLogout }) {
           <>
             <div className="section-header">
               <div>
-                <p className="eyebrow">YOUR PROJECTS</p>
-                <h3>Projects</h3>
+                <p className="eyebrow">
+                  {isAdministrator
+                    ? "ALL PROJECTS"
+                    : "YOUR PROJECTS"}
+                </p>
+
+                <h3>
+                  {isAdministrator
+                    ? "All Projects"
+                    : "Projects"}
+                </h3>
               </div>
 
               <button

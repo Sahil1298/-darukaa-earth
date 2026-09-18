@@ -25,11 +25,12 @@ async def get_projects(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
-        select(Project)
-        .where(Project.user_id == current_user.id)
-        .order_by(Project.id)
-    )
+    query = select(Project).order_by(Project.id)
+
+    if current_user.role != "administrator":
+        query = query.where(Project.user_id == current_user.id)
+
+    result = await db.execute(query)
 
     return result.scalars().all()
 
@@ -43,12 +44,12 @@ async def get_project(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
-        select(Project).where(
-            Project.id == project_id,
-            Project.user_id == current_user.id,
-        )
-    )
+    query = select(Project).where(Project.id == project_id)
+
+    if current_user.role != "administrator":
+        query = query.where(Project.user_id == current_user.id)
+
+    result = await db.execute(query)
 
     project = result.scalar_one_or_none()
 

@@ -43,6 +43,24 @@ button {
   font-size: 13px;
 }
 
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border: 1px solid #d5ddd2;
+  border-radius: 999px;
+  background: #f5f7f2;
+  color: #516057;
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .login-button,
 .primary-button,
 .secondary-button,
@@ -517,7 +535,7 @@ button {
   color: #68736b;
 }
 
-/* Leaflet Site Marker */
+/* Site Marker */
 
 .site-marker {
   width: 18px;
@@ -587,6 +605,12 @@ button {
 @media (max-width: 800px) {
   .navbar {
     padding: 20px 24px;
+  }
+
+  .user-info {
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 6px;
   }
 
   .hero {

@@ -1,10 +1,11 @@
 from typing import Annotated
-from datetime import timedelta
 from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.dependencies import get_current_user
 from app.core.security import (
     create_access_token,
@@ -47,6 +48,7 @@ async def register_user(
         name=user_data.name,
         email=user_data.email,
         password_hash=get_password_hash(user_data.password),
+        role="user",
         created_at=datetime.now(timezone.utc),
     )
 
@@ -79,15 +81,15 @@ async def login_user(
 
     access_token = create_access_token(
         data={"sub": str(user.id)},
-        expires_delta=timedelta(
-            minutes=30,
-        ),
+        expires_delta=timedelta(minutes=30),
     )
 
     return {
         "access_token": access_token,
         "token_type": "bearer",
     }
+
+
 @router.get(
     "/me",
     response_model=UserResponse,

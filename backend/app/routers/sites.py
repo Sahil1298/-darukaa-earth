@@ -29,13 +29,14 @@ async def get_sites(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    project_result = await db.execute(
-        select(Project).where(
-            Project.id == project_id,
-            Project.user_id == current_user.id,
-        )
-    )
+    project_query = select(Project).where(Project.id == project_id)
 
+    if current_user.role != "administrator":
+        project_query = project_query.where(
+            Project.user_id == current_user.id
+        )
+
+    project_result = await db.execute(project_query)
     project = project_result.scalar_one_or_none()
 
     if project is None:
@@ -69,6 +70,7 @@ async def get_sites(
         for site, latitude, longitude in rows
     ]
 
+
 @router.get(
     "/{site_id}",
     response_model=SiteResponse,
@@ -79,7 +81,7 @@ async def get_site(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
+    query = (
         select(
             Site,
             func.ST_Y(Site.location).label("latitude"),
@@ -89,9 +91,13 @@ async def get_site(
         .where(
             Site.id == site_id,
             Site.project_id == project_id,
-            Project.user_id == current_user.id,
         )
     )
+
+    if current_user.role != "administrator":
+        query = query.where(Project.user_id == current_user.id)
+
+    result = await db.execute(query)
 
     row = result.one_or_none()
 
@@ -113,6 +119,7 @@ async def get_site(
         created_at=site.created_at,
     )
 
+
 @router.put(
     "/{site_id}",
     response_model=SiteResponse,
@@ -124,7 +131,7 @@ async def update_site(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
+    query = (
         select(
             Site,
             func.ST_Y(Site.location).label("latitude"),
@@ -134,9 +141,13 @@ async def update_site(
         .where(
             Site.id == site_id,
             Site.project_id == project_id,
-            Project.user_id == current_user.id,
         )
     )
+
+    if current_user.role != "administrator":
+        query = query.where(Project.user_id == current_user.id)
+
+    result = await db.execute(query)
 
     row = result.one_or_none()
 
@@ -168,6 +179,7 @@ async def update_site(
         created_at=site.created_at,
     )
 
+
 @router.delete(
     "/{site_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -178,15 +190,19 @@ async def delete_site(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
+    query = (
         select(Site)
         .join(Project, Project.id == Site.project_id)
         .where(
             Site.id == site_id,
             Site.project_id == project_id,
-            Project.user_id == current_user.id,
         )
     )
+
+    if current_user.role != "administrator":
+        query = query.where(Project.user_id == current_user.id)
+
+    result = await db.execute(query)
 
     site = result.scalar_one_or_none()
 
@@ -199,6 +215,7 @@ async def delete_site(
     await db.delete(site)
     await db.commit()
 
+
 @router.post(
     "/",
     response_model=SiteResponse,
@@ -210,13 +227,14 @@ async def create_site(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    project_result = await db.execute(
-        select(Project).where(
-            Project.id == project_id,
-            Project.user_id == current_user.id,
-        )
-    )
+    project_query = select(Project).where(Project.id == project_id)
 
+    if current_user.role != "administrator":
+        project_query = project_query.where(
+            Project.user_id == current_user.id
+        )
+
+    project_result = await db.execute(project_query)
     project = project_result.scalar_one_or_none()
 
     if project is None:

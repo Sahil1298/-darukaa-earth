@@ -18,6 +18,7 @@ router = APIRouter(
     tags=["metrics"],
 )
 
+
 @router.get(
     "/",
     response_model=list[MetricResponse],
@@ -28,16 +29,21 @@ async def get_metrics(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    site_result = await db.execute(
+    site_query = (
         select(Site)
         .join(Project, Project.id == Site.project_id)
         .where(
             Site.id == site_id,
             Site.project_id == project_id,
-            Project.user_id == current_user.id,
         )
     )
 
+    if current_user.role != "administrator":
+        site_query = site_query.where(
+            Project.user_id == current_user.id
+        )
+
+    site_result = await db.execute(site_query)
     site = site_result.scalar_one_or_none()
 
     if site is None:
@@ -67,6 +73,7 @@ async def get_metrics(
         for metric in metrics
     ]
 
+
 @router.get(
     "/{metric_id}",
     response_model=MetricResponse,
@@ -78,7 +85,7 @@ async def get_metric(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
+    query = (
         select(Metric)
         .join(Site, Site.id == Metric.site_id)
         .join(Project, Project.id == Site.project_id)
@@ -86,10 +93,15 @@ async def get_metric(
             Metric.id == metric_id,
             Metric.site_id == site_id,
             Site.project_id == project_id,
-            Project.user_id == current_user.id,
         )
     )
 
+    if current_user.role != "administrator":
+        query = query.where(
+            Project.user_id == current_user.id
+        )
+
+    result = await db.execute(query)
     metric = result.scalar_one_or_none()
 
     if metric is None:
@@ -108,6 +120,7 @@ async def get_metric(
         habitat_area=float(metric.habitat_area),
     )
 
+
 @router.put(
     "/{metric_id}",
     response_model=MetricResponse,
@@ -120,7 +133,7 @@ async def update_metric(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
+    query = (
         select(Metric)
         .join(Site, Site.id == Metric.site_id)
         .join(Project, Project.id == Site.project_id)
@@ -128,10 +141,15 @@ async def update_metric(
             Metric.id == metric_id,
             Metric.site_id == site_id,
             Site.project_id == project_id,
-            Project.user_id == current_user.id,
         )
     )
 
+    if current_user.role != "administrator":
+        query = query.where(
+            Project.user_id == current_user.id
+        )
+
+    result = await db.execute(query)
     metric = result.scalar_one_or_none()
 
     if metric is None:
@@ -159,6 +177,7 @@ async def update_metric(
         habitat_area=float(metric.habitat_area),
     )
 
+
 @router.delete(
     "/{metric_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -170,7 +189,7 @@ async def delete_metric(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
+    query = (
         select(Metric)
         .join(Site, Site.id == Metric.site_id)
         .join(Project, Project.id == Site.project_id)
@@ -178,10 +197,15 @@ async def delete_metric(
             Metric.id == metric_id,
             Metric.site_id == site_id,
             Site.project_id == project_id,
-            Project.user_id == current_user.id,
         )
     )
 
+    if current_user.role != "administrator":
+        query = query.where(
+            Project.user_id == current_user.id
+        )
+
+    result = await db.execute(query)
     metric = result.scalar_one_or_none()
 
     if metric is None:
@@ -192,6 +216,7 @@ async def delete_metric(
 
     await db.delete(metric)
     await db.commit()
+
 
 @router.post(
     "/",
@@ -205,16 +230,21 @@ async def create_metric(
     current_user: Annotated[User, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    result = await db.execute(
+    site_query = (
         select(Site)
         .join(Project, Project.id == Site.project_id)
         .where(
             Site.id == site_id,
             Site.project_id == project_id,
-            Project.user_id == current_user.id,
         )
     )
 
+    if current_user.role != "administrator":
+        site_query = site_query.where(
+            Project.user_id == current_user.id
+        )
+
+    result = await db.execute(site_query)
     site = result.scalar_one_or_none()
 
     if site is None:
