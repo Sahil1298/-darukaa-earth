@@ -137,3 +137,68 @@ export async function deleteSite(token, projectId, siteId) {
     }
   );
 }
+
+export async function getMetrics(token, projectId, siteId) {
+  return request(
+    `/api/projects/${projectId}/sites/${siteId}/metrics/`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+}
+
+export async function createMetric(
+  token,
+  projectId,
+  siteId,
+  metricData
+) {
+  return request(
+    `/api/projects/${projectId}/sites/${siteId}/metrics/`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(metricData),
+    }
+  );
+}
+
+export async function updateMetric(
+  token,
+  projectId,
+  siteId,
+  metricId,
+  metricData
+) {
+  return request(
+    `/api/projects/${projectId}/sites/${siteId}/metrics/${metricId}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(metricData),
+    }
+  );
+}
+
+export async function deleteMetric(
+  token,
+  projectId,
+  siteId,
+  metricId
+) {
+  return request(
+    `/api/projects/${projectId}/sites/${siteId}/metrics/${metricId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+}
