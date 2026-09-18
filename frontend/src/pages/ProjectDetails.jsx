@@ -5,6 +5,7 @@ import {
   deleteSite,
   getSites,
 } from "../services/api";
+import SiteMap from "../components/SiteMap";
 
 function ProjectDetails({
   project,
@@ -209,35 +210,51 @@ function ProjectDetails({
             {!loading &&
               !error &&
               sites.length > 0 && (
-                <div className="project-grid">
-                  {sites.map((site) => (
-                    <article
-                      className="project-card"
-                      key={site.id}
-                    >
-                      <h3>{site.name}</h3>
-
-                      <p>
-                        Area: {site.area_hectares} hectares
-                      </p>
-
-                      <p>
-                        Latitude: {site.latitude}
-                        <br />
-                        Longitude: {site.longitude}
-                      </p>
-
-                      <button
-                        className="secondary-button"
-                        onClick={() =>
-                          handleDeleteSite(site.id)
-                        }
+                <>
+                  <div className="project-grid">
+                    {sites.map((site) => (
+                      <article
+                        className="project-card"
+                        key={site.id}
                       >
-                        Delete Site
-                      </button>
-                    </article>
-                  ))}
-                </div>
+                        <h3>{site.name}</h3>
+
+                        <p>
+                          Area: {site.area_hectares} hectares
+                        </p>
+
+                        <p>
+                          Latitude: {site.latitude}
+                          <br />
+                          Longitude: {site.longitude}
+                        </p>
+
+                        <button
+                          className="secondary-button"
+                          onClick={() =>
+                            handleDeleteSite(site.id)
+                          }
+                        >
+                          Delete Site
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+
+                  <div className="map-section">
+                    <div className="section-header">
+                      <div>
+                        <p className="eyebrow">
+                          SITE LOCATIONS
+                        </p>
+
+                        <h3>Map</h3>
+                      </div>
+                    </div>
+
+                    <SiteMap sites={sites} />
+                  </div>
+                </>
               )}
           </>
         ) : (
@@ -245,6 +262,7 @@ function ProjectDetails({
             <div className="section-header">
               <div>
                 <p className="eyebrow">NEW SITE</p>
+
                 <h3>Add Geographical Site</h3>
               </div>
 
