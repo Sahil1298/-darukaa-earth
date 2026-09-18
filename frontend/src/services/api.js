@@ -1,4 +1,7 @@
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://127.0.0.1:8000"
+).replace(/\/$/, "");
 
 class ApiError extends Error {
   constructor(message, status) {
@@ -9,7 +12,8 @@ class ApiError extends Error {
 }
 
 async function parseResponse(response) {
-  const contentType = response.headers.get("content-type") || "";
+  const contentType =
+    response.headers.get("content-type") || "";
 
   if (contentType.includes("application/json")) {
     return response.json();
@@ -21,23 +25,31 @@ async function parseResponse(response) {
 }
 
 async function request(url, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${url}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...options.headers,
-    },
-  });
+  const response = await fetch(
+    `${API_BASE_URL}${url}`,
+    {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+    }
+  );
 
   const data = await parseResponse(response);
 
   if (!response.ok) {
     const message =
-      data && typeof data === "object" && data.detail
+      data &&
+      typeof data === "object" &&
+      data.detail
         ? data.detail
         : "Request failed";
 
-    throw new ApiError(message, response.status);
+    throw new ApiError(
+      message,
+      response.status
+    );
   }
 
   return data;
@@ -54,29 +66,41 @@ export async function registerUser(userData) {
   });
 }
 
-export async function loginUser(email, password) {
+export async function loginUser(
+  email,
+  password
+) {
   const body = new URLSearchParams();
 
   body.append("username", email.trim());
   body.append("password", password);
 
-  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/auth/login`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/x-www-form-urlencoded",
+      },
+      body,
+    }
+  );
 
   const data = await parseResponse(response);
 
   if (!response.ok) {
     const message =
-      data && typeof data === "object" && data.detail
+      data &&
+      typeof data === "object" &&
+      data.detail
         ? data.detail
         : "Login failed";
 
-    throw new ApiError(message, response.status);
+    throw new ApiError(
+      message,
+      response.status
+    );
   }
 
   return data;
@@ -98,7 +122,10 @@ export async function getProjects(token) {
   });
 }
 
-export async function createProject(token, projectData) {
+export async function createProject(
+  token,
+  projectData
+) {
   return request("/api/projects/", {
     method: "POST",
     headers: {
@@ -108,25 +135,42 @@ export async function createProject(token, projectData) {
   });
 }
 
-export async function getSites(token, projectId) {
-  return request(`/api/projects/${projectId}/sites/`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+export async function getSites(
+  token,
+  projectId
+) {
+  return request(
+    `/api/projects/${projectId}/sites/`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 }
 
-export async function createSite(token, projectId, siteData) {
-  return request(`/api/projects/${projectId}/sites/`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(siteData),
-  });
+export async function createSite(
+  token,
+  projectId,
+  siteData
+) {
+  return request(
+    `/api/projects/${projectId}/sites/`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(siteData),
+    }
+  );
 }
 
-export async function deleteSite(token, projectId, siteId) {
+export async function deleteSite(
+  token,
+  projectId,
+  siteId
+) {
   return request(
     `/api/projects/${projectId}/sites/${siteId}`,
     {
@@ -138,7 +182,11 @@ export async function deleteSite(token, projectId, siteId) {
   );
 }
 
-export async function getMetrics(token, projectId, siteId) {
+export async function getMetrics(
+  token,
+  projectId,
+  siteId
+) {
   return request(
     `/api/projects/${projectId}/sites/${siteId}/metrics/`,
     {
