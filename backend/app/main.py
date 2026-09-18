@@ -7,7 +7,7 @@ from app.db.database import get_db
 from app.routers import auth
 from app.routers import projects
 from app.routers import sites
-
+from app.routers import metrics
 app = FastAPI(
     title="Darukaa.Earth API",
     description="Geospatial carbon and biodiversity analytics platform",
@@ -21,7 +21,7 @@ app.include_router(
 )
 app.include_router(sites.router)
 app.include_router(auth.router)
-
+app.include_router(metrics.router)
 
 @app.get("/")
 async def root():

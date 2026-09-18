@@ -36,7 +36,9 @@ Phase 6 - JWT authentication and authorization: Completed
 
 Phase 7 - Geographical site APIs: Completed
 
-Next phase: Environmental metric APIs
+Phase 8 - Environmental metric APIs: Completed
+
+Next phase: Automated API testing
 
 ## Project Structure
 
@@ -73,6 +75,7 @@ darukaa-earth/
 │   │   ├── routers/
 │   │   │   ├── __init__.py
 │   │   │   ├── auth.py
+│   │   │   ├── metrics.py
 │   │   │   ├── projects.py
 │   │   │   └── sites.py
 │   │   ├── __init__.py
@@ -259,8 +262,10 @@ Current schemas:
     ProjectCreate
     ProjectResponse
     SiteCreate
+    SiteUpdate
     SiteResponse
     MetricCreate
+    MetricUpdate
     MetricResponse
 
 Request schemas validate incoming API data before it reaches the database.
@@ -297,10 +302,11 @@ Current project endpoints:
 
     GET /api/projects/
     GET /api/projects/{project_id}
+    POST /api/projects/
 
-The project list endpoint reads projects from PostgreSQL using SQLAlchemy.
+The project API uses SQLAlchemy to read and create project records.
 
-The project detail endpoint retrieves a project by ID.
+Project creation associates the project with the authenticated user.
 
 When a project does not exist, the API returns HTTP 404 with:
 
@@ -591,6 +597,127 @@ SRID:
 
 This confirms that the API coordinates are stored as a PostGIS geometry rather than plain text or separate database coordinate fields.
 
+## Phase 8 - Environmental Metric APIs
+
+Environmental metric management was added for individual geographical sites.
+
+The metric router is located at:
+
+    backend/app/routers/metrics.py
+
+The metric API uses the prefix:
+
+    /api/projects/{project_id}/sites/{site_id}/metrics
+
+Current metric endpoints:
+
+    POST /api/projects/{project_id}/sites/{site_id}/metrics/
+    GET /api/projects/{project_id}/sites/{site_id}/metrics/
+    GET /api/projects/{project_id}/sites/{site_id}/metrics/{metric_id}
+    PUT /api/projects/{project_id}/sites/{site_id}/metrics/{metric_id}
+    DELETE /api/projects/{project_id}/sites/{site_id}/metrics/{metric_id}
+
+### Metric Creation
+
+A metric is created for an authenticated user's site.
+
+The request accepts:
+
+    recorded_at
+    carbon_sequestered
+    carbon_avoided
+    biodiversity_score
+    habitat_area
+
+The API verifies:
+
+    Metric site
+    Site project
+    Project ownership
+
+before creating the metric.
+
+### Metric Retrieval
+
+The API can return all metrics belonging to a site:
+
+    GET /api/projects/{project_id}/sites/{site_id}/metrics/
+
+A single metric can be retrieved using:
+
+    GET /api/projects/{project_id}/sites/{site_id}/metrics/{metric_id}
+
+Metric queries are filtered through the project and site ownership chain.
+
+A missing metric returns:
+
+    404 Not Found
+
+Example:
+
+    {
+      "detail": "Metric not found"
+    }
+
+### Metric Update
+
+A metric can be updated using:
+
+    PUT /api/projects/{project_id}/sites/{site_id}/metrics/{metric_id}
+
+The update request accepts:
+
+    recorded_at
+    carbon_sequestered
+    carbon_avoided
+    biodiversity_score
+    habitat_area
+
+The API validates the data using:
+
+    MetricUpdate
+
+Ownership is checked before the metric is modified.
+
+### Metric Deletion
+
+A metric can be deleted using:
+
+    DELETE /api/projects/{project_id}/sites/{site_id}/metrics/{metric_id}
+
+Successful deletion returns:
+
+    204 No Content
+
+The metric is removed from PostgreSQL.
+
+Ownership is checked before deletion.
+
+### Metric Authorization
+
+Metric creation, retrieval, update and deletion are protected by JWT authentication.
+
+The ownership chain is:
+
+    User → Project → Site → Metric
+
+A user cannot access or modify metrics belonging to another user's site.
+
+Authorization was tested using a second user.
+
+Unauthorized metric creation, retrieval, update and deletion requests were rejected.
+
+### Database Verification
+
+Metric creation, update and deletion were verified against PostgreSQL.
+
+This confirms that the metric API is connected through:
+
+    FastAPI
+    Pydantic
+    SQLAlchemy
+    PostgreSQL
+
 ## Database Architecture
 
 The database relationship is:
@@ -644,7 +771,7 @@ Git commits represent meaningful development milestones.
 
 The README is updated as each major phase is completed.
 
-Authentication and site-management work are grouped into meaningful feature commits instead of committing every small implementation step separately.
+Features are grouped into meaningful commits instead of committing every small implementation step separately.
 
 ## Git Milestones
 
@@ -680,21 +807,11 @@ Phase 7:
 
     feat: add geographical site APIs
 
+Phase 8:
+
+    feat: add environmental metric APIs
+
 ## Planned Features
-
-Environmental metric creation and management
-
-Metric APIs
-
-Carbon analytics
-
-Biodiversity analytics
-
-PostGIS location queries
-
-Interactive Mapbox visualization
-
-Highcharts analytics
 
 Automated API testing
 
@@ -703,6 +820,16 @@ Ruff linting and formatting
 Husky and lint-staged
 
 GitHub Actions CI/CD
+
+PostGIS location queries
+
+Carbon analytics
+
+Biodiversity analytics
+
+Interactive Mapbox visualization
+
+Highcharts analytics
 
 Frontend development using React
 
