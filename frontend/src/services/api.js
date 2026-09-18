@@ -107,3 +107,33 @@ export async function createProject(token, projectData) {
     body: JSON.stringify(projectData),
   });
 }
+
+export async function getSites(token, projectId) {
+  return request(`/api/projects/${projectId}/sites/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function createSite(token, projectId, siteData) {
+  return request(`/api/projects/${projectId}/sites/`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(siteData),
+  });
+}
+
+export async function deleteSite(token, projectId, siteId) {
+  return request(
+    `/api/projects/${projectId}/sites/${siteId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+}

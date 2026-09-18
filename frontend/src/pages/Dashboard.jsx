@@ -4,6 +4,7 @@ import {
   createProject,
   getProjects,
 } from "../services/api";
+import ProjectDetails from "./ProjectDetails";
 
 function Dashboard({ user, onLogout }) {
   const [projects, setProjects] = useState([]);
@@ -11,8 +12,12 @@ function Dashboard({ user, onLogout }) {
   const [error, setError] = useState("");
 
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
+
   const [projectName, setProjectName] = useState("");
-  const [projectDescription, setProjectDescription] = useState("");
+  const [projectDescription, setProjectDescription] =
+    useState("");
+
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
@@ -50,6 +55,14 @@ function Dashboard({ user, onLogout }) {
     setProjectDescription("");
   }
 
+  function openProject(project) {
+    setSelectedProject(project);
+  }
+
+  function closeProject() {
+    setSelectedProject(null);
+  }
+
   async function handleCreateProject(event) {
     event.preventDefault();
 
@@ -80,6 +93,16 @@ function Dashboard({ user, onLogout }) {
     } finally {
       setCreating(false);
     }
+  }
+
+  if (selectedProject) {
+    return (
+      <ProjectDetails
+        project={selectedProject}
+        onBack={closeProject}
+        onLogout={onLogout}
+      />
+    );
   }
 
   return (
@@ -171,6 +194,17 @@ function Dashboard({ user, onLogout }) {
                     <article
                       className="project-card"
                       key={project.id}
+                      onClick={() => openProject(project)}
+                      role="button"
+                      tabIndex="0"
+                      onKeyDown={(event) => {
+                        if (
+                          event.key === "Enter" ||
+                          event.key === " "
+                        ) {
+                          openProject(project);
+                        }
+                      }}
                     >
                       <h3>{project.name}</h3>
 
@@ -182,6 +216,10 @@ function Dashboard({ user, onLogout }) {
                       <span>
                         Project #{project.id}
                       </span>
+
+                      <div className="project-card-action">
+                        Open Project →
+                      </div>
                     </article>
                   ))}
                 </div>
